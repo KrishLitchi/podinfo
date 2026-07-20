@@ -1,0 +1,137 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# README...
+#    This file can be used to configure the behaviour of the pipeline.
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+service:
+  # The name of your service, make sure this is kebab-case (lower-case, uses hyphens instead of spaces)
+  name: "example-java-service"
+  # The port of your service
+  port: 8080
+
+pullRequest:
+  # The profile to use for pull request builds, this should be a non-production profile
+  profile: "dev-euwest1"
+
+########################################################################################################################
+# Deployment Strategy
+########################################################################################################################
+deployment:
+  # You can use this to turn-off Kubernetes deployments, for pipelines that don't deploy to Kubernetes
+  enabled: true
+  # The default branch filled in the pipeline parameters
+  #defaultBranch: "master"
+  # Whether to enable a parameter to override the deployment namespace for the build pipeline (only). This is not
+  # recommended as best practice.
+  #dynamic_namespace: false
+  # The strategy to deploy the application.
+  #
+  # Once set, this should never be changed, or you may need to rebuild your deployment.
+  #
+  # Options:
+  # "full" - applies yaml, triggers rolling restart of pods
+  # "canary" - spins up a canary pod for a period of time, performs checks, applies yaml, and triggers rolling restart
+  # "bluegreen" - spins up a separate deployment, where traffic can be shifted in an independent pipeline
+  strategy: "canary"
+  checks:
+    canaryDeployment:
+      - type: splunk
+        file: deployment/splunk-error-rate.txt
+    canaryOngoing:
+      - type: splunk
+        file: deployment/splunk-error-rate.txt
+    canaryFinished:
+      - type: splunk
+        file: deployment/splunk-error-rate.txt
+    deploymentCheck:
+      - type: splunk
+        file: deployment/splunk-error-rate.txt
+
+
+########################################################################################################################
+# Github Release
+########################################################################################################################
+githubRelease:
+  enabled: true
+  # The Jenkins credential ID with your Github service account token,
+  # only change this to override the default name (not recommended)
+  #credentialId: "github"
+
+########################################################################################################################
+# Quality Gate: Code Coverage
+########################################################################################################################
+codeCoverage:
+  enabled: true
+
+########################################################################################################################
+# Quality Gate: BDD tests
+########################################################################################################################
+bdd:
+  enabled: true
+
+########################################################################################################################
+# Quality Gate: Performance testing (using Gatling)
+########################################################################################################################
+performanceTesting:
+  enabled: true
+
+########################################################################################################################
+# Quality Gate: OWASP Dependency Checker
+#
+# Detects vulnerable dependencies, for Java, quicker than Blackduck (typically). Not required, but strongly recommended.
+########################################################################################################################
+owaspDependencyChecker:
+  enabled: true
+
+########################################################################################################################
+# Quality Gate: Snyk
+#
+# SCA and SBOM are required for any builds going to production.
+########################################################################################################################
+snyk:
+  # The Jenkins credential ID of the token/secret text credential created in Jenkins with your Snyk API token,
+  # only change this to override the default name (not recommended)
+  #credentialId: "snyk"
+  # Change this to your organisation in Snyk
+  organisation: "wp-engineering"
+  # Dependency analysis using snyk monitor
+  sca:
+    enabled: true
+    # List of files to be scanned (rather Snyk auto-detect projects/files); delete entire section for auto-detection
+    files:
+      # Example to scan a fat jar, the key will be the project name in Snyk
+      jar: "example-java-service/target/example-java-service.jar"
+    # Comma-separated list of exceptions to ignore during the scan
+    #exceptions: "EXC-1234,EXC-5678"
+    # Force Maven aggregate project for auto-detection Automatically enabled when pom.xml exists in the root of the
+    # repo, unless this is explicitly set to false.
+    #maven: true
+    # Comma-separated list of file-names to exclude (doesn't exclude modules/sub-projects), equivalent of
+    # --exclude param in Snyk CLI.
+    #exclude: "foobar"
+  # Snyk code / static code analysis
+  sast:
+    # Note: not currently working properly, not recommended to enable this yet
+    enabled: true
+
+########################################################################################################################
+# Quality Gate: Sysdig Secure Container Image Scanning - requires a Sysdig team
+#
+# Required for PCI-DSS projects releasing to production.
+########################################################################################################################
+sysdigImageScanning:
+  enabled: true
+  # The Jenkins credential ID of the token/secret text credential created in Jenkins with your Sysdig team API token,
+  # only change this to override the default name (not recommended)
+  #credentialId: "sysdig"
+
+########################################################################################################################
+# Release Checks: Splunk logs - requires a Splunk service account
+#
+# Not used out of the box, only required when using Scalyr release log checks.
+########################################################################################################################
+#splunk:
+#  serviceAccount:
+    # The Jenkins credential ID of the username credential created in Jenkins with your Splunk service
+    # username/password, only change this to override the default name (not recommended)
+    #credentialId: "splunk"
